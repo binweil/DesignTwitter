@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!DOCTYPE configuration
+        PUBLIC "-//mybatis.org//DTD Config 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-config.dtd">
+
+<configuration>
+    <!-- 配置环境 -->
+    <environments default="mysql">
+        <environment id="mysql">
+            <transactionManager type="JDBC"/>
+            <dataSource type="POOLED">
+                <property name="driver" value="com.mysql.cj.jdbc.Driver"/>
+                <!-- /// ==> //localhost:3306 -->
+                <property name="url" value="jdbc:mysql://localhost:3306/TwitterStorage?serverTimezone=UTC"/>
+                <property name="username" value="root"/>
+                <property name="password" value="13661559928Aa!!"/>
+            </dataSource>
+        </environment>
+    </environments>
+
+    <!-- 映射配置文件 -->
+    <mappers>
+        <!-- 可以引入整个package， 也可以单个引入class-->
+        <package name="com.twitter.dao"/>
+    </mappers>
+</configuration>
