@@ -3,6 +3,7 @@
        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
        xmlns:mvc="http://www.springframework.org/schema/mvc"
        xmlns:context="http://www.springframework.org/schema/context"
+       xmlns:aop="http://www.springframework.org/schema/aop"
        xsi:schemaLocation="
         http://www.springframework.org/schema/beans
         http://www.springframework.org/schema/beans/spring-beans-2.5.xsd
@@ -31,4 +32,7 @@
 
     <!-- Start MVC annotation support 开启spring mvc 注解支持-->
     <mvc:annotation-driven />
+
+    <!-- 开启AOP支持-->
+    <aop:aspectj-autoproxy proxy-target-class="true"/>
 </beans>
