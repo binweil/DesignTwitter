@@ -8,6 +8,9 @@ import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.ModelAndView;
 
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+
 @Controller
 public class FriendShipController {
 
@@ -16,16 +19,15 @@ public class FriendShipController {
 
     @RequestMapping(value = "/follow", method = RequestMethod.POST)
     @ResponseBody
-    public ModelAndView follow(@ModelAttribute FriendShipEditRequestModel request) {
+    public ModelAndView follow(@ModelAttribute FriendShipEditRequestModel request,
+                               HttpServletResponse response) {
         ModelAndView res;
         try {
-            String fromUserID = request.getFromUserID();
-            String toUserID = request.getToUserID();
-            System.out.println(fromUserID + "\t" + toUserID);
             friendShipService.follow(request);
             return new ModelAndView("success");
         } catch (Exception exception) {
             exception.printStackTrace();
+            response.setStatus(500);
             res = new ModelAndView("error");
             ErrorPageModel errorPageModel = new ErrorPageModel("Internal Server Error", exception.getMessage());
             res.addObject("error", errorPageModel);
@@ -35,15 +37,15 @@ public class FriendShipController {
 
     @RequestMapping(value = "/unFollow", method = RequestMethod.POST)
     @ResponseBody
-    public ModelAndView unFollow(@ModelAttribute FriendShipEditRequestModel request) {
+    public ModelAndView unFollow(@ModelAttribute FriendShipEditRequestModel request,
+                                 HttpServletResponse response) {
         ModelAndView res;
         try {
-            String fromUserID = request.getFromUserID();
-            String toUserID = request.getToUserID();
-            System.out.println(fromUserID + "\t" + toUserID);
+            friendShipService.unFollow(request);
             return new ModelAndView("success");
         } catch (Exception exception) {
             exception.printStackTrace();
+            response.setStatus(500);
             res = new ModelAndView("error");
             ErrorPageModel errorPageModel = new ErrorPageModel("Internal Server Error", exception.getMessage());
             res.addObject("error", errorPageModel);

@@ -1,6 +1,7 @@
 package com.twitter.controller;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -17,11 +18,12 @@ import java.util.*;
 public class EndpointDocController {
 
     @Autowired
-    private RequestMappingHandlerMapping requestMappingHandlerMapping;
+    @Qualifier("customRequestMappingHandlerMapping")
+    private RequestMappingHandlerMapping customRequestMappingHandlerMapping;
 
     @RequestMapping(value = "/mappings", method = RequestMethod.GET)
     public @ResponseBody ModelAndView getAllEndpoints () {
-        Map<RequestMappingInfo, HandlerMethod> handlerMapping = requestMappingHandlerMapping.getHandlerMethods();
+        Map<RequestMappingInfo, HandlerMethod> handlerMapping = customRequestMappingHandlerMapping.getHandlerMethods();
         Map<String, Set<String>> urlMapping = new HashMap<>();
         ModelAndView mav = new ModelAndView("mapping");
         for (Map.Entry<RequestMappingInfo, HandlerMethod> mapping : handlerMapping.entrySet()) {
@@ -31,20 +33,5 @@ public class EndpointDocController {
         }
         mav.addObject("urlMapping", urlMapping);
         return mav;
-    }
-
-    @CrossOrigin
-    @RequestMapping(value = "/JSON/mappings", method = RequestMethod.GET)
-    public @ResponseBody Map<String, Set<String>> getAllEndpointsJSON () {
-        Map<RequestMappingInfo, HandlerMethod> handlerMapping = requestMappingHandlerMapping.getHandlerMethods();
-        Map<String, Set<String>> urlMapping = new HashMap<>();
-        ModelAndView mav = new ModelAndView("mapping");
-        for (Map.Entry<RequestMappingInfo, HandlerMethod> mapping : handlerMapping.entrySet()) {
-            Set<String> urls = mapping.getKey().getPatternsCondition().getPatterns();
-            String methodName = mapping.getValue().getMethod().getName();
-            urlMapping.put(methodName, urls);
-        }
-        mav.addObject("urlMapping", urlMapping);
-        return urlMapping;
     }
 }
