@@ -1,50 +1,76 @@
 package com.twitter.controller;
 
-import com.twitter.model.HttpUnauthorizedException;
+import com.amazonaws.services.cognitoidp.AWSCognitoIdentityProvider;
+import com.amazonaws.services.cognitoidp.model.*;
 import com.twitter.service.AuthenticationService;
+import com.twitter.utils.AppConfig;
 import com.twitter.utils.SerializationUtils;
-import org.apache.ibatis.javassist.NotFoundException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
 
-import javax.servlet.http.Cookie;
+import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 
 @Controller
+@CrossOrigin(allowCredentials = "true")
 public class AuthenticationController {
 
     @Autowired
-    private AuthenticationService authenticationService;
+    private AWSCognitoIdentityProvider awsCognitoIdentityProvider;
 
-    @CrossOrigin(allowCredentials = "true")
-    @RequestMapping(value = "/JSON/login/{username}/{encryptPassword}", method = RequestMethod.GET)
-    public @ResponseBody String getAuthenticationCookie (@PathVariable(value = "username") String username,
-                                                         @PathVariable(value = "encryptPassword") String encryptPassword,
-                                                         HttpServletResponse response) throws IOException {
-        try {
-            Map<String, String> res = new HashMap<>();
-            String tokenFromDatabase = authenticationService.getToken(username, encryptPassword);
-            Cookie cookie = new Cookie("authToken", tokenFromDatabase);
-            cookie.setMaxAge(7*24*60*60);
-            cookie.setDomain("localhost");
-            cookie.setPath("/");
-            res.put("authToken", tokenFromDatabase);
-            response.addCookie(cookie);
-            return SerializationUtils.serialize(res);
-        } catch (NotFoundException exception) {
-            response.setStatus(404);
-            return exception.toString();
-        } catch (HttpUnauthorizedException exception) {
-            response.setStatus(401);
-            return SerializationUtils.serialize(exception);
-        } catch (Exception exception) {
-            exception.printStackTrace();
-            response.setStatus(500);
-            return exception.toString();
+    @RequestMapping(value = "/JSON/create-cognito-user", method = RequestMethod.GET)
+    public @ResponseBody String cognitoCreateUser (HttpServletResponse response) throws IOException {
+        awsCognitoIdentityProvider.adminCreateUser(new AdminCreateUserRequest()
+                .withUserPoolId("us-west-2_3vzP55EYn")
+                .withUsername("lamy")
+                .withUserAttributes(
+                        new AttributeType()
+                                .withName("email")
+                                .withValue("binweil@uci.edu"),
+                        new AttributeType()
+                                .withName("email_verified")
+                                .withValue("true")
+                ));
+        return "success";
+    }
+
+    @RequestMapping(value = "/JSON/login-cognito-user", method = RequestMethod.POST)
+    public @ResponseBody String cognitoLogin (@RequestBody Map<String, String> payload,
+                                              HttpServletRequest request,
+                                              HttpServletResponse response) throws IOException {
+        HashMap<String, String> authParams = new HashMap<String, String>();
+        authParams.put("USERNAME", payload.get("USERNAME"));
+        authParams.put("PASSWORD", payload.get("PASSWORD"));
+        AdminInitiateAuthRequest authRequest = new AdminInitiateAuthRequest()
+                .withAuthFlow(AuthFlowType.ADMIN_NO_SRP_AUTH)
+                .withUserPoolId((String)AppConfig.getParameter("Beta", "userPoolID"))
+                .withClientId((String)AppConfig.getParameter("Beta", "clientID"))
+                .withAuthParameters(authParams);
+        AdminInitiateAuthResult authResult = awsCognitoIdentityProvider.adminInitiateAuth(authRequest);
+
+        String accessToken = null;
+        if (authResult != null) {
+            AuthenticationResultType resultType = authResult.getAuthenticationResult();
+            if (resultType != null) {
+                accessToken = authResult.getAuthenticationResult().getAccessToken();
+            }
         }
+        return "success";
+    }
+
+    @RequestMapping(value = "/JSON/logout-cognito-user/{username}", method = RequestMethod.GET)
+    public @ResponseBody String cognitoLogout (@PathVariable(value = "username") String username,
+                                             HttpServletResponse response) throws IOException {
+        AdminUserGlobalSignOutRequest signOutRequest = new AdminUserGlobalSignOutRequest()
+                .withUsername(username)
+                .withUserPoolId("us-west-2_3vzP55EYn");
+        // The AdminUserGlobalSignOutResult returned by this function does not contain any useful information so the
+        // result is ignored.
+        awsCognitoIdentityProvider.adminUserGlobalSignOut(signOutRequest);
+        return "logged out";
     }
 }

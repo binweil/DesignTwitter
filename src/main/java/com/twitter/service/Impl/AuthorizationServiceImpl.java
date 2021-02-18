@@ -1,52 +1,46 @@
 package com.twitter.service.Impl;
 
-import com.twitter.dao.AuthenticationDAO;
+import com.auth0.jwk.Jwk;
+import com.auth0.jwk.JwkException;
+import com.auth0.jwk.JwkProvider;
+import com.auth0.jwk.UrlJwkProvider;
+import com.auth0.jwt.JWT;
+import com.auth0.jwt.algorithms.Algorithm;
+import com.auth0.jwt.interfaces.DecodedJWT;
+
 import com.twitter.model.HttpUnauthorizedException;
 import com.twitter.service.AuthenticationService;
-import org.springframework.beans.factory.annotation.Autowired;
+import com.twitter.utils.AppConfig;
+
 import org.springframework.stereotype.Service;
 
-import java.security.MessageDigest;
+import java.net.MalformedURLException;
+import java.net.URI;
+import java.security.interfaces.RSAPublicKey;
+import java.util.Calendar;
 
 @Service("authenticationService")
 public class AuthorizationServiceImpl implements AuthenticationService {
 
-    @Autowired
-    private AuthenticationDAO authenticationDAO;
+    private JwkProvider provider;
 
-    @Override
-    public boolean isUserAuthorized(String username, String token) throws Exception {
-        String password = authenticationDAO.getPassword(username);
-        if (authenticationDAO.isUserExist(username) && token.equals(SHA(username+password))) {
-            return true;
-        }
-        throw new HttpUnauthorizedException("You are unauthorized to perform the operation", "");
+    public AuthorizationServiceImpl () throws MalformedURLException {
+        String region = (String) AppConfig.getParameter("Beta", "region");;
+        String userPoolID = (String) AppConfig.getParameter("Beta", "userPoolID");
+        String keysURL = String.format("https://cognito-idp.%s.amazonaws.com/%s/.well-known/jwks.json", region, userPoolID);
+        this.provider = new UrlJwkProvider(URI.create(keysURL).toURL());
     }
 
     @Override
-    public String getToken(String username, String encryptPassword) throws Exception {
-        String tokenFromDatabase = SHA(username + authenticationDAO.getPassword(username));
-        if (tokenFromDatabase.equals(encryptPassword)) {
-            return tokenFromDatabase;
+    public boolean isUserAuthorized(String token) throws HttpUnauthorizedException, JwkException {
+        DecodedJWT jwt = JWT.decode(token);
+        Jwk jwk = this.provider.get(jwt.getKeyId());
+        Algorithm algorithm = Algorithm.RSA256((RSAPublicKey) jwk.getPublicKey(), null);
+        algorithm.verify(jwt);
+        // Check Expire Token
+        if (jwt.getExpiresAt().before(Calendar.getInstance().getTime())) {
+            throw new HttpUnauthorizedException("Unauthorized", "Expired Token!");
         }
-        throw new HttpUnauthorizedException("User " + username + "is not authorized", "");
-    }
-
-    public static String SHA (String str) throws Exception {
-        if (str == null || str.isEmpty()) {
-            return "";
-        }
-        MessageDigest messageDigest = MessageDigest.getInstance("SHA-256");
-        messageDigest.update(str.getBytes());
-        byte byteBuffer[] = messageDigest.digest();
-        StringBuffer strHexString = new StringBuffer();
-        for (int i = 0; i < byteBuffer.length; i++) {
-            String hex = Integer.toHexString(0xff & byteBuffer[i]);
-            if (hex.length() == 1) {
-                strHexString.append('0');
-            }
-            strHexString.append(hex);
-        }
-        return strHexString.toString();
+        return true;
     }
 }

@@ -1,6 +1,15 @@
 package com.twitter.config;
 
+import com.amazonaws.auth.AWSCredentials;
+import com.amazonaws.auth.AWSCredentialsProvider;
+import com.amazonaws.auth.AWSStaticCredentialsProvider;
+import com.amazonaws.auth.BasicAWSCredentials;
+import com.amazonaws.services.cognitoidp.AWSCognitoIdentityProvider;
+import com.amazonaws.services.cognitoidp.AWSCognitoIdentityProviderClientBuilder;
+
+import com.twitter.utils.AppConfig;
 import com.twitter.utils.SerializationUtils;
+
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
@@ -27,5 +36,18 @@ public class ApplicationBeanConfig {
     @Bean
     public SerializationUtils serializationUtils () {
         return new SerializationUtils();
+    }
+
+    @Bean
+    public AWSCognitoIdentityProvider awsCognitoIdentityProvider() {
+        AWSCredentials credentials = new BasicAWSCredentials(
+                (String)AppConfig.getParameter("Beta", "AWS_ID"),
+                (String)AppConfig.getParameter("Beta", "AWS_KEY"));
+        AWSCredentialsProvider credProvider = new AWSStaticCredentialsProvider(credentials);
+        AWSCognitoIdentityProvider client = AWSCognitoIdentityProviderClientBuilder.standard()
+                .withCredentials(credProvider)
+                .withRegion((String)AppConfig.getParameter("Beta", "region"))
+                .build();
+        return client;
     }
 }

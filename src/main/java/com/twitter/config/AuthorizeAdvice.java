@@ -13,9 +13,12 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.context.request.ServletRequestAttributes;
 
+import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
+
+import static com.twitter.utils.Constants.JWT_TOKEN;
 
 @Aspect
 @Order(1)
@@ -30,11 +33,19 @@ public class AuthorizeAdvice {
     @Around(value = "@annotation(target)", argNames = "joinPoint, target")
     public Object authorizeOperation (final ProceedingJoinPoint joinPoint,
                                        final Authorize target) throws IOException {
+        String jwtToken = null;
         try {
             HttpServletRequest request = ((ServletRequestAttributes) RequestContextHolder.getRequestAttributes()).getRequest();
             HttpServletResponse response = ((ServletRequestAttributes) RequestContextHolder.getRequestAttributes()).getResponse();
-            System.out.println("Authorize");
-            boolean isAuthorized = authenticationService.isUserAuthorized("username", "token");
+            Cookie[] cookies = request.getCookies();
+            if (cookies != null) {
+                for (Cookie cookie : cookies) {
+                    if (cookie.getName().equals(JWT_TOKEN)) {
+                        jwtToken = cookie.getValue();
+                    }
+                }
+            }
+            boolean isAuthorized = authenticationService.isUserAuthorized(jwtToken);
             if (isAuthorized) {
                 return joinPoint.proceed();
             }

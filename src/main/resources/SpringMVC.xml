@@ -25,6 +25,10 @@
         <property name="suffix" value=".jsp"/>
     </bean>
 
+    <mvc:interceptors>
+        <bean id="authorizationInterceptor" class="com.twitter.interceptor.AuthorizationInterceptor" />
+    </mvc:interceptors>
+
     <!-- Static Resources 静态资源 -->
     <mvc:resources mapping="/css/**" location="/css/"/>
     <mvc:resources mapping="/js/**" location="/js/"/>
