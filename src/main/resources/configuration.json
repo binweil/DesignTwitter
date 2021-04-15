@@ -1,14 +1,10 @@
 {
   "Beta" : {
-    "AWS_ID": "AKIAQ2ZWVPLR6HYY4PVZ",
-    "AWS_KEY": "85irM8QLKOMAH2BBJA2TuTXa5d6ecOBDzt1HFtWE",
     "region": "us-west-2",
     "userPoolID": "us-west-2_3vzP55EYn",
     "clientID": "55atftvpvfdcrngu22i5b727pf"
   },
   "Prod": {
-    "AWS_ID": "AKIAQ2ZWVPLR6HYY4PVZ",
-    "AWS_KEY": "85irM8QLKOMAH2BBJA2TuTXa5d6ecOBDzt1HFtWE",
     "region": "us-west-2",
     "userPoolID": "us-west-2_3vzP55EYn",
     "clientID": "55atftvpvfdcrngu22i5b727pf"
